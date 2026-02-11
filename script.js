@@ -3,6 +3,7 @@
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
+  clicks = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords;
@@ -14,6 +15,9 @@ class Workout {
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${months[this.date.getMonth()]} 
 ${this.date.getDate()}`;
+  }
+  click(){
+    this.clicks ++;
   }
 }
 
@@ -60,6 +64,7 @@ const inputElevation = document.querySelector('.form__input--elevation');
 
 class App {
   #map;
+  #mapZoomLevel = 16;
   #mapEvent;
   #workouts = [];
 
@@ -67,7 +72,7 @@ class App {
     this._getPosition();
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
-    containerWorkouts.addEventListener('click')
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this))
   }
 
   _getPosition() {
@@ -86,7 +91,7 @@ class App {
     const { longitude } = position.coords;
     console.log(`https://www.google.pt/maps/@${latitude}, ${longitude}`);
     const coords = [latitude, longitude];
-    this.#map = L.map('map').setView(coords, 16);
+    this.#map = L.map('map').setView(coords,this.#mapZoomLevel);
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
       //L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg', {
       attribution:
@@ -217,6 +222,22 @@ class App {
         </li>`;
 
     form.insertAdjacentHTML('afterend', html);
+  }
+
+  _moveToPopup(e){
+    const workoutEl = e.target.closest('.workout');
+    console.log(workoutEl)
+
+    if (!workoutEl) return;
+    const workout = this.#workouts.find(work => work.id === workoutEl.dataset.id);
+    console.log(workout)
+    this.#map.setView(workout.coords, this.#mapZoomLevel, {
+      animation: true,
+      pan: {
+        duration: 1
+      }
+    });
+    workout.click();
   }
 }
 
